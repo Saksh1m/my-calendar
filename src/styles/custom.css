@@ -1,0 +1,101 @@
+/* DeadlineHub Custom Styles */
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f8f9fc;
+}
+
+/* Sidebar */
+.sidebar .nav-link {
+  color: #5a5c69;
+  transition: all 0.15s ease;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  color: #4e73df;
+  background-color: #eaecf4;
+}
+
+/* Calendar overrides */
+.rbc-calendar {
+  font-family: inherit;
+}
+
+.rbc-toolbar button {
+  border-radius: 6px !important;
+  font-size: 0.85rem;
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: #4e73df;
+  color: #fff;
+  border-color: #4e73df;
+}
+
+.rbc-event {
+  padding: 2px 6px;
+  font-size: 0.78rem;
+}
+
+.rbc-today {
+  background-color: #eef2ff;
+}
+
+.rbc-header {
+  padding: 8px 4px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Cards */
+.card {
+  border: none;
+  border-radius: 8px;
+}
+
+.card-header {
+  border-bottom: 1px solid #e3e6f0;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* Navbar brand */
+.navbar-brand {
+  font-size: 1.25rem;
+  letter-spacing: -0.5px;
+}
+
+/* Badge tweaks */
+.badge {
+  font-weight: 500;
+  font-size: 0.7rem;
+}
+
+/* Task card hover */
+.card:hover {
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Responsive */
+@media (max-width: 991.98px) {
+  main {
+    padding: 1rem !important;
+  }
+}

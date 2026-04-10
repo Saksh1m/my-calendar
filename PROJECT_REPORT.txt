@@ -1,0 +1,408 @@
+================================================================================
+                     UNIFIED DEADLINE MANAGEMENT SYSTEM
+                            PROJECT REPORT
+================================================================================
+
+Project Title    : Unified Deadline Management System (DeadlineHub)
+Technology Stack : MERN Stack (Frontend - React.js)
+Date             : March 2026
+Platform         : Web Application (Responsive)
+
+================================================================================
+                          TABLE OF CONTENTS
+================================================================================
+
+  1. Introduction
+  2. Problem Statement
+  3. Objectives
+  4. Technology Stack
+  5. System Architecture
+  6. Module Description
+  7. Project Structure
+  8. Features Implemented
+  9. User Interface Design
+  10. Future Enhancements
+  11. Conclusion
+  12. References
+
+================================================================================
+1. INTRODUCTION
+================================================================================
+
+The Unified Deadline Management System, branded as "DeadlineHub", is a
+web-based application designed to help students and interns manage deadlines
+scattered across multiple platforms such as college portals, Microsoft Teams,
+and personal reminders. The application provides a single, centralized
+dashboard where users can track all academic and internship-related tasks
+and deadlines in one place.
+
+This report documents the frontend implementation of the application, built
+using React.js with Bootstrap for responsive UI design.
+
+================================================================================
+2. PROBLEM STATEMENT
+================================================================================
+
+Students and interns often juggle deadlines from multiple sources:
+
+  - College portals (assignments, quizzes, exams)
+  - Internship tools (Microsoft Teams meetings, planner tasks)
+  - Personal goals (reading, fitness, portfolio updates)
+
+Managing these across different platforms leads to:
+
+  - Missed deadlines due to lack of a unified view
+  - Difficulty in prioritizing tasks across contexts
+  - No visibility into productivity patterns
+  - Constant context-switching between platforms
+
+There is a need for a centralized system that aggregates all deadlines,
+provides smart reminders, and offers productivity insights.
+
+================================================================================
+3. OBJECTIVES
+================================================================================
+
+  1. Provide a unified calendar dashboard displaying tasks, quizzes,
+     meetings, and submission deadlines in monthly, weekly, and daily views.
+
+  2. Enable users to add, edit, delete, and mark tasks as completed with
+     details like title, description, source, deadline, priority, and links.
+
+  3. Implement visual urgency categorization (Critical, Approaching, Safe,
+     Overdue) based on deadline proximity.
+
+  4. Integrate with Microsoft Teams via Microsoft Graph API to sync
+     meetings, planner tasks, and calendar events.
+
+  5. Provide productivity analytics showing completed tasks, missed
+     deadlines, and weekly/monthly progress.
+
+  6. Implement a reminder system with browser notifications and email
+     alert configuration.
+
+  7. Build a responsive interface that works on desktop and mobile devices.
+
+================================================================================
+4. TECHNOLOGY STACK
+================================================================================
+
+  Category          | Technology
+  ------------------+----------------------------------------------
+  Frontend Library  | React.js 19
+  Build Tool        | Vite 7.x
+  UI Framework      | Bootstrap 5 / React-Bootstrap
+  Routing           | React Router DOM v7
+  Calendar          | react-big-calendar with date-fns localizer
+  Charts            | Recharts
+  Icons             | React Icons (Font Awesome set)
+  Date Utilities    | date-fns
+  State Management  | React Context API + useReducer
+  Language          | JavaScript (ES6+)
+  Package Manager   | npm
+
+================================================================================
+5. SYSTEM ARCHITECTURE
+================================================================================
+
+The frontend follows a component-based architecture with the following layers:
+
+  +-------------------------------------------------------------------+
+  |                        Browser (Client)                           |
+  +-------------------------------------------------------------------+
+  |  React Router  -->  Layout (Navbar + Sidebar + Content Area)      |
+  +-------------------------------------------------------------------+
+  |  Pages/Routes:                                                    |
+  |    /            -->  Calendar Dashboard                           |
+  |    /tasks       -->  Task Manager                                 |
+  |    /analytics   -->  Productivity Analytics                       |
+  |    /teams       -->  Microsoft Teams Integration                  |
+  |    /reminders   -->  Reminder Settings                            |
+  +-------------------------------------------------------------------+
+  |  State Layer:  TaskContext (Context API + useReducer)              |
+  +-------------------------------------------------------------------+
+  |  Data Layer:   Mock Data (simulates backend API responses)        |
+  +-------------------------------------------------------------------+
+
+Data Flow:
+  - TaskContext provides global state to all components
+  - Actions (add, edit, delete, toggle) dispatch to a reducer
+  - Components consume state via the useTasks() custom hook
+  - Mock data simulates what would come from a MongoDB backend
+
+================================================================================
+6. MODULE DESCRIPTION
+================================================================================
+
+6.1 Layout Module
+-----------------
+  - TopNavbar: Dark-themed navigation bar with brand logo, page links,
+    and a notification dropdown showing urgent deadlines with badge count.
+  - Sidebar: Left navigation panel with links, pending task counts,
+    overdue badge, and a color-coded source legend (College, Internship,
+    Personal). Hidden on mobile for responsive design.
+  - Layout: Wrapper component composing Navbar + Sidebar + main content.
+
+6.2 Calendar Dashboard Module
+------------------------------
+  - CalendarDashboard: Full-featured calendar using react-big-calendar
+    with month, week, day, and agenda views. Events are color-coded by
+    urgency level. Includes summary stat cards (Pending, Critical,
+    Approaching, Safe) and an upcoming deadlines list.
+  - TaskQuickView: Modal popup triggered when clicking a calendar event,
+    displaying task details with the option to mark complete.
+
+6.3 Task Management Module
+---------------------------
+  - TaskList: Main task management page with search bar, filters
+    (source, priority, status), sorting options (deadline, priority,
+    title), and a grid of task cards. Includes add/edit modal trigger.
+  - TaskCard: Individual task display card showing title, description,
+    deadline, and badges for source, priority, and urgency. Action
+    buttons for complete, edit, and delete.
+  - TaskForm: Modal form for creating and editing tasks with fields
+    for title, description, source, priority, deadline, and link.
+
+6.4 Productivity Analytics Module
+----------------------------------
+  - AnalyticsDashboard: Statistics overview with four KPI cards (Total,
+    Completed, Missed, Completion Rate). Charts include:
+      * Weekly Activity (grouped bar chart)
+      * Source Distribution (donut pie chart)
+      * Monthly Trend (area chart)
+      * Priority Distribution (pie chart)
+
+6.5 Microsoft Teams Integration Module
+---------------------------------------
+  - TeamsIntegration: Two-state component:
+      * Disconnected: Shows connect prompt with Microsoft sign-in button
+      * Connected: Displays synced meetings (with organizer, time,
+        duration, channel, recurring badge) and planner tasks (with
+        bucket status and due dates). Includes manual sync button.
+
+6.6 Reminders Module
+---------------------
+  - ReminderSettings: Configuration panel for browser notifications
+    (with permission request) and email alerts. Includes default
+    reminder time selector (15min to 1 day). Shows overdue alert
+    banner and a list of upcoming reminders sorted by deadline.
+
+6.7 State Management Module
+-----------------------------
+  - TaskContext: Centralized state using React Context API with
+    useReducer. Supports four actions: ADD_TASK, EDIT_TASK,
+    DELETE_TASK, TOGGLE_COMPLETE. Provides the useTasks() hook
+    for component consumption.
+
+6.8 Utilities Module
+---------------------
+  - helpers.js: Utility functions including:
+      * getUrgencyLevel() - calculates urgency based on time remaining
+      * getUrgencyBadge() - returns badge color/label for urgency
+      * getSourceBadge() - returns badge color/label for source
+      * getPriorityBadge() - returns badge color/label for priority
+      * formatDeadline() - formats date for display
+      * generateId() - creates unique IDs for new tasks
+
+================================================================================
+7. PROJECT STRUCTURE
+================================================================================
+
+  my-calendar/
+  |-- index.html
+  |-- package.json
+  |-- vite.config.js
+  |-- public/
+  |   |-- vite.svg
+  |-- src/
+      |-- App.jsx                          (Main app with routing)
+      |-- main.jsx                         (Entry point)
+      |-- components/
+      |   |-- Layout/
+      |   |   |-- TopNavbar.jsx
+      |   |   |-- Sidebar.jsx
+      |   |   |-- Layout.jsx
+      |   |-- Calendar/
+      |   |   |-- CalendarDashboard.jsx
+      |   |   |-- TaskQuickView.jsx
+      |   |-- Tasks/
+      |   |   |-- TaskList.jsx
+      |   |   |-- TaskCard.jsx
+      |   |   |-- TaskForm.jsx
+      |   |-- Analytics/
+      |   |   |-- AnalyticsDashboard.jsx
+      |   |-- Teams/
+      |   |   |-- TeamsIntegration.jsx
+      |   |-- Reminders/
+      |       |-- ReminderSettings.jsx
+      |-- context/
+      |   |-- TaskContext.jsx
+      |-- data/
+      |   |-- mockData.js
+      |-- utils/
+      |   |-- helpers.js
+      |-- styles/
+          |-- custom.css
+
+  Total Components : 12
+  Total Files      : 16 source files
+
+================================================================================
+8. FEATURES IMPLEMENTED
+================================================================================
+
+  # | Feature                        | Description
+  --+--------------------------------+------------------------------------------
+  1 | Unified Calendar Dashboard     | Monthly, weekly, daily, and agenda views
+    |                                | with color-coded events by urgency.
+  --+--------------------------------+------------------------------------------
+  2 | Task CRUD Operations           | Add, edit, delete, and toggle completion
+    |                                | of tasks with full detail forms.
+  --+--------------------------------+------------------------------------------
+  3 | Smart Urgency Classification   | Automatic categorization into Overdue,
+    |                                | Critical (<24h), Approaching (<72h),
+    |                                | and Safe based on deadline proximity.
+  --+--------------------------------+------------------------------------------
+  4 | Multi-Source Categorization    | Tasks tagged as College, Internship, or
+    |                                | Personal with color-coded badges.
+  --+--------------------------------+------------------------------------------
+  5 | Priority Levels                | High, Medium, Low priority with visual
+    |                                | indicators on all task displays.
+  --+--------------------------------+------------------------------------------
+  6 | Search and Filtering           | Real-time search by title/description.
+    |                                | Filters for source, priority, and status.
+    |                                | Sort by deadline, priority, or title.
+  --+--------------------------------+------------------------------------------
+  7 | Productivity Analytics         | KPI cards, weekly bar charts, monthly
+    |                                | trend area charts, and pie charts for
+    |                                | source and priority distribution.
+  --+--------------------------------+------------------------------------------
+  8 | Microsoft Teams Integration    | Simulated OAuth flow. Displays synced
+    |                                | meetings and planner tasks with details.
+  --+--------------------------------+------------------------------------------
+  9 | Reminder Configuration         | Browser notification permission request,
+    |                                | email alert toggle, configurable reminder
+    |                                | timing (15min to 1 day before).
+  --+--------------------------------+------------------------------------------
+  10| Notification Badge             | Real-time badge count in navbar showing
+    |                                | number of critical/overdue tasks.
+  --+--------------------------------+------------------------------------------
+  11| Responsive Design              | Bootstrap grid system. Sidebar hidden on
+    |                                | mobile. Cards reflow for smaller screens.
+  --+--------------------------------+------------------------------------------
+  12| Event Quick View               | Click any calendar event to see full
+    |                                | details in a modal with action buttons.
+
+================================================================================
+9. USER INTERFACE DESIGN
+================================================================================
+
+9.1 Color Scheme
+-----------------
+  - Primary Blue   : #4e73df  (navigation, college badges)
+  - Success Green  : #1cc88a  (internship, safe, completed)
+  - Warning Yellow : #f6c23e  (personal, approaching, medium priority)
+  - Danger Red     : #e74a3b  (overdue, critical, high priority)
+  - Info Blue      : #36b9cc  (low priority)
+  - Background     : #f8f9fc  (light gray)
+  - Dark Navbar    : Bootstrap dark theme
+
+9.2 Layout Design
+------------------
+  - Fixed top navbar (56px height)
+  - Left sidebar (240px width, hidden on screens < 992px)
+  - Main content area with 1rem padding on mobile, 1.5rem on desktop
+  - Cards with subtle shadows, 8px border radius, no borders
+
+9.3 Typography
+---------------
+  - Font Family: Segoe UI, system-ui, -apple-system, sans-serif
+  - Headings: Bold weight (fw-bold)
+  - Body text: Regular weight
+  - Small labels: 0.7rem-0.85rem for badges and metadata
+
+================================================================================
+10. FUTURE ENHANCEMENTS
+================================================================================
+
+  1. Backend Integration
+     - Connect to Express.js + MongoDB backend for persistent storage
+     - User authentication with JWT tokens
+     - RESTful API for CRUD operations
+
+  2. Real Microsoft Teams Integration
+     - Implement Microsoft Graph API OAuth2 flow
+     - Real-time sync of Teams calendar events
+     - Import Planner tasks automatically
+
+  3. Email Notification Service
+     - Integrate with email service (SendGrid/Nodemailer)
+     - Scheduled reminder emails before deadlines
+     - Daily digest emails
+
+  4. College Portal Scraping
+     - Web scraping module for common college portals
+     - Automatic deadline extraction and import
+
+  5. Collaboration Features
+     - Share tasks with classmates
+     - Group project deadline tracking
+     - Comment threads on tasks
+
+  6. Advanced Analytics
+     - AI-powered productivity suggestions
+     - Deadline prediction based on historical data
+     - Focus time recommendations
+
+  7. Mobile Application
+     - React Native version for iOS and Android
+     - Push notifications on mobile devices
+
+  8. Calendar Export
+     - Export deadlines to Google Calendar / iCal
+     - ICS file generation
+
+================================================================================
+11. CONCLUSION
+================================================================================
+
+The Unified Deadline Management System (DeadlineHub) successfully addresses
+the problem of managing scattered deadlines across multiple platforms. The
+frontend implementation provides:
+
+  - A visually intuitive calendar dashboard with multiple view options
+  - Comprehensive task management with smart urgency classification
+  - Productivity analytics for self-assessment and improvement
+  - Microsoft Teams integration readiness for organizational workflows
+  - Configurable reminder and notification system
+
+The application is built with modern web technologies (React 19, Bootstrap 5,
+Vite) following component-based architecture principles. The responsive design
+ensures accessibility across desktop and mobile devices. The modular structure
+allows easy extension with a backend system for full-stack deployment.
+
+The project demonstrates practical application of:
+  - React component composition and state management
+  - Context API with useReducer for scalable state handling
+  - Third-party library integration (calendars, charts, date utilities)
+  - Responsive UI design with Bootstrap grid system
+  - Clean code organization and separation of concerns
+
+================================================================================
+12. REFERENCES
+================================================================================
+
+  1. React Documentation - https://react.dev
+  2. React Bootstrap - https://react-bootstrap.netlify.app
+  3. React Big Calendar - https://github.com/jquense/react-big-calendar
+  4. Recharts - https://recharts.org
+  5. React Router - https://reactrouter.com
+  6. date-fns - https://date-fns.org
+  7. Bootstrap 5 - https://getbootstrap.com
+  8. Vite - https://vite.dev
+  9. Microsoft Graph API - https://learn.microsoft.com/en-us/graph
+  10. React Icons - https://react-icons.github.io/react-icons
+
+================================================================================
+                          END OF REPORT
+================================================================================
