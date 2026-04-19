@@ -1,13 +1,18 @@
 import asyncHandler from 'express-async-handler';
 import Task from '../models/Task.js';
+import Source from '../models/Source.js';
 
 export const getAnalytics = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const tasks = await Task.find({ user: userId });
+  const [tasks, sources] = await Promise.all([
+    Task.find({ user: userId }),
+    Source.find({ user: userId }),
+  ]);
 
-  const sourceDistribution = ['college', 'internship', 'personal', 'other'].map((s) => ({
-    name: s,
-    value: tasks.filter((t) => t.source === s).length,
+  const sourceDistribution = sources.map((s) => ({
+    name: s.name,
+    color: s.color,
+    value: tasks.filter((t) => t.source === s.name).length,
   }));
 
   const priorityDistribution = ['high', 'medium', 'low'].map((p) => ({

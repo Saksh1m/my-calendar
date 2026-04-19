@@ -1,15 +1,56 @@
-import { Container, Row, Col, Card } from 'react-bootstrap';
+import { useEffect, useState } from 'react';
+import { Container, Row, Col, Card, Spinner, Alert } from 'react-bootstrap';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area,
+  PieChart, Pie, Cell,
 } from 'recharts';
 import { FaCheckCircle, FaTimesCircle, FaClipboardList, FaTrophy } from 'react-icons/fa';
 import { useTasks } from '../../context/TaskContext';
-import { analyticsData } from '../../data/mockData';
+import { api } from '../../api/client';
 import { getUrgencyLevel } from '../../utils/helpers';
+
+const SOURCE_COLORS = {
+  college: '#4e73df',
+  internship: '#1cc88a',
+  personal: '#f6c23e',
+  other: '#858796',
+};
+
+const PRIORITY_COLORS = {
+  high: '#e74a3b',
+  medium: '#f6c23e',
+  low: '#1cc88a',
+};
 
 export default function AnalyticsDashboard() {
   const { tasks } = useTasks();
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    api.analytics()
+      .then((data) => setAnalytics(data))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [tasks]);
+
+  if (loading && !analytics) {
+    return (
+      <Container fluid className="text-center py-5">
+        <Spinner animation="border" />
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container fluid>
+        <Alert variant="danger">Failed to load analytics: {error}</Alert>
+      </Container>
+    );
+  }
 
   const completed = tasks.filter((t) => t.completed).length;
   const missed = tasks.filter((t) => getUrgencyLevel(t.deadline, t.completed) === 'overdue').length;
@@ -22,6 +63,10 @@ export default function AnalyticsDashboard() {
     { label: 'Missed', value: missed, icon: <FaTimesCircle />, color: 'danger' },
     { label: 'Completion Rate', value: `${rate}%`, icon: <FaTrophy />, color: 'warning' },
   ];
+
+  const sourceData = (analytics?.sourceDistribution || []).filter((s) => s.value > 0);
+  const priorityData = (analytics?.priorityDistribution || []).filter((p) => p.value > 0);
+  const weeklyData = analytics?.weeklyProgress || [];
 
   return (
     <Container fluid>
@@ -50,7 +95,7 @@ export default function AnalyticsDashboard() {
             <Card.Header className="bg-white fw-bold">Weekly Activity</Card.Header>
             <Card.Body>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={analyticsData.weeklyProgress}>
+                <BarChart data={weeklyData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="day" />
                   <YAxis />
@@ -67,69 +112,59 @@ export default function AnalyticsDashboard() {
           <Card className="shadow-sm h-100">
             <Card.Header className="bg-white fw-bold">By Source</Card.Header>
             <Card.Body className="d-flex align-items-center justify-content-center">
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={analyticsData.sourceDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {analyticsData.sourceDistribution.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              {sourceData.length === 0 ? (
+                <p className="text-muted mb-0">No data yet</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={sourceData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {sourceData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.color || SOURCE_COLORS[entry.name] || '#858796'} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
       <Row className="g-3">
-        <Col md={8}>
-          <Card className="shadow-sm">
-            <Card.Header className="bg-white fw-bold">Monthly Trend</Card.Header>
-            <Card.Body>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={analyticsData.monthlyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Area type="monotone" dataKey="completed" stroke="#1cc88a" fill="#1cc88a" fillOpacity={0.2} name="Completed" />
-                  <Area type="monotone" dataKey="missed" stroke="#e74a3b" fill="#e74a3b" fillOpacity={0.2} name="Missed" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4}>
+        <Col md={12}>
           <Card className="shadow-sm h-100">
             <Card.Header className="bg-white fw-bold">By Priority</Card.Header>
             <Card.Body className="d-flex align-items-center justify-content-center">
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={analyticsData.priorityDistribution}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {analyticsData.priorityDistribution.map((entry) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              {priorityData.length === 0 ? (
+                <p className="text-muted mb-0">No data yet</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={priorityData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={120}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {priorityData.map((entry) => (
+                        <Cell key={entry.name} fill={PRIORITY_COLORS[entry.name] || '#858796'} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </Card.Body>
           </Card>
         </Col>

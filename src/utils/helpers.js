@@ -20,15 +20,6 @@ export function getUrgencyBadge(urgency) {
   return map[urgency] || map.safe;
 }
 
-export function getSourceBadge(source) {
-  const map = {
-    college: { bg: 'primary', label: 'College' },
-    internship: { bg: 'success', label: 'Internship' },
-    personal: { bg: 'warning', label: 'Personal' },
-  };
-  return map[source] || { bg: 'secondary', label: source };
-}
-
 export function getPriorityBadge(priority) {
   const map = {
     high: { bg: 'danger', label: 'High' },

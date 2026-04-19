@@ -1,20 +1,22 @@
 import { Card, Badge, Button, ButtonGroup } from 'react-bootstrap';
 import { FaCheck, FaEdit, FaTrash, FaClock, FaExternalLinkAlt } from 'react-icons/fa';
 import { format } from 'date-fns';
-import { getUrgencyLevel, getUrgencyBadge, getSourceBadge, getPriorityBadge } from '../../utils/helpers';
+import { getUrgencyLevel, getUrgencyBadge, getPriorityBadge } from '../../utils/helpers';
+import { useSources } from '../../context/SourceContext';
 
 export default function TaskCard({ task, onToggle, onEdit, onDelete }) {
+  const { getSourceColor } = useSources();
   const urgency = getUrgencyLevel(task.deadline, task.completed);
   const uBadge = getUrgencyBadge(urgency);
-  const sBadge = getSourceBadge(task.source);
   const pBadge = getPriorityBadge(task.priority);
+  const sourceColor = getSourceColor(task.source);
 
   return (
     <Card className={`shadow-sm mb-3 ${task.completed ? 'opacity-75' : ''}`}>
       <Card.Body>
         <div className="d-flex justify-content-between align-items-start mb-2">
           <div className="d-flex gap-2 flex-wrap">
-            <Badge bg={sBadge.bg}>{sBadge.label}</Badge>
+            <Badge style={{ backgroundColor: sourceColor }} className="text-capitalize">{task.source}</Badge>
             <Badge bg={pBadge.bg}>{pBadge.label}</Badge>
             <Badge bg={uBadge.bg}>{uBadge.label}</Badge>
           </div>

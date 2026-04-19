@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 import { format } from 'date-fns';
+import { useSources } from '../../context/SourceContext';
 
-const defaultForm = {
+const blankForm = {
   title: '',
   description: '',
-  source: 'college',
+  source: '',
   deadline: '',
   priority: 'medium',
   link: '',
 };
 
 export default function TaskForm({ show, onHide, onSubmit, editingTask }) {
-  const [form, setForm] = useState(defaultForm);
+  const { sources } = useSources();
+  const [form, setForm] = useState(blankForm);
 
   useEffect(() => {
     if (editingTask) {
@@ -21,9 +23,9 @@ export default function TaskForm({ show, onHide, onSubmit, editingTask }) {
         deadline: format(new Date(editingTask.deadline), "yyyy-MM-dd'T'HH:mm"),
       });
     } else {
-      setForm(defaultForm);
+      setForm({ ...blankForm, source: sources[0]?.name || '' });
     }
-  }, [editingTask, show]);
+  }, [editingTask, show, sources]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -52,10 +54,11 @@ export default function TaskForm({ show, onHide, onSubmit, editingTask }) {
             <Col md={4}>
               <Form.Group className="mb-3">
                 <Form.Label>Source *</Form.Label>
-                <Form.Select name="source" value={form.source} onChange={handleChange}>
-                  <option value="college">College</option>
-                  <option value="internship">Internship</option>
-                  <option value="personal">Personal</option>
+                <Form.Select name="source" value={form.source} onChange={handleChange} required>
+                  {sources.length === 0 && <option value="">No sources — add one in the sidebar</option>}
+                  {sources.map((s) => (
+                    <option key={s.id} value={s.name} className="text-capitalize">{s.name}</option>
+                  ))}
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -83,7 +86,9 @@ export default function TaskForm({ show, onHide, onSubmit, editingTask }) {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onHide}>Cancel</Button>
-          <Button variant="primary" type="submit">{editingTask ? 'Save Changes' : 'Add Task'}</Button>
+          <Button variant="primary" type="submit" disabled={sources.length === 0}>
+            {editingTask ? 'Save Changes' : 'Add Task'}
+          </Button>
         </Modal.Footer>
       </Form>
     </Modal>

@@ -1,12 +1,20 @@
-import { Navbar, Nav, Container, Badge, Dropdown } from 'react-bootstrap';
-import { Link, useLocation } from 'react-router-dom';
-import { FaBell, FaCalendarAlt, FaTasks, FaChartBar, FaMicrosoft } from 'react-icons/fa';
+import { Navbar, Nav, Container, Badge, Dropdown, Button } from 'react-bootstrap';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FaBell, FaCalendarAlt, FaTasks, FaChartBar, FaMicrosoft, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
 import { useTasks } from '../../context/TaskContext';
+import { useAuth } from '../../context/AuthContext';
 import { getUrgencyLevel } from '../../utils/helpers';
 
 export default function TopNavbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { tasks } = useTasks();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const urgentCount = tasks.filter(
     (t) => !t.completed && ['critical', 'overdue'].includes(getUrgencyLevel(t.deadline, t.completed))
@@ -42,7 +50,12 @@ export default function TopNavbar() {
               </Nav.Link>
             ))}
           </Nav>
-          <Nav>
+          <Nav className="align-items-center gap-2">
+            {user && (
+              <span className="text-light small d-flex align-items-center">
+                <FaUserCircle className="me-1" /> {user.name}
+              </span>
+            )}
             <Dropdown align="end">
               <Dropdown.Toggle variant="outline-light" size="sm" className="position-relative">
                 <FaBell />
@@ -67,6 +80,9 @@ export default function TopNavbar() {
                 )}
               </Dropdown.Menu>
             </Dropdown>
+            <Button variant="outline-light" size="sm" onClick={handleLogout} title="Logout">
+              <FaSignOutAlt />
+            </Button>
           </Nav>
         </Navbar.Collapse>
       </Container>

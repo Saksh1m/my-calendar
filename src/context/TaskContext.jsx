@@ -1,34 +1,61 @@
-import { createContext, useContext, useReducer, useCallback } from 'react';
-import { initialTasks } from '../data/mockData';
-import { generateId } from '../utils/helpers';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { api } from '../api/client';
+import { useAuth } from './AuthContext';
 
 const TaskContext = createContext();
 
-function taskReducer(state, action) {
-  switch (action.type) {
-    case 'ADD_TASK':
-      return [{ ...action.payload, id: generateId(), createdAt: new Date() }, ...state];
-    case 'EDIT_TASK':
-      return state.map((t) => (t.id === action.payload.id ? { ...t, ...action.payload } : t));
-    case 'DELETE_TASK':
-      return state.filter((t) => t.id !== action.payload);
-    case 'TOGGLE_COMPLETE':
-      return state.map((t) => (t.id === action.payload ? { ...t, completed: !t.completed } : t));
-    default:
-      return state;
-  }
-}
-
 export function TaskProvider({ children }) {
-  const [tasks, dispatch] = useReducer(taskReducer, initialTasks);
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const addTask = useCallback((task) => dispatch({ type: 'ADD_TASK', payload: task }), []);
-  const editTask = useCallback((task) => dispatch({ type: 'EDIT_TASK', payload: task }), []);
-  const deleteTask = useCallback((id) => dispatch({ type: 'DELETE_TASK', payload: id }), []);
-  const toggleComplete = useCallback((id) => dispatch({ type: 'TOGGLE_COMPLETE', payload: id }), []);
+  const refresh = useCallback(async () => {
+    if (!user) {
+      setTasks([]);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.listTasks();
+      setTasks(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const addTask = useCallback(async (task) => {
+    const created = await api.createTask(task);
+    setTasks((prev) => [created, ...prev]);
+  }, []);
+
+  const editTask = useCallback(async (task) => {
+    const { id, ...payload } = task;
+    const updated = await api.updateTask(id, payload);
+    setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+  }, []);
+
+  const deleteTask = useCallback(async (id) => {
+    await api.deleteTask(id);
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const toggleComplete = useCallback(async (id) => {
+    const updated = await api.toggleTask(id);
+    setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+  }, []);
 
   return (
-    <TaskContext.Provider value={{ tasks, addTask, editTask, deleteTask, toggleComplete }}>
+    <TaskContext.Provider
+      value={{ tasks, loading, error, refresh, addTask, editTask, deleteTask, toggleComplete }}
+    >
       {children}
     </TaskContext.Provider>
   );

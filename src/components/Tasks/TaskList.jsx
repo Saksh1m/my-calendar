@@ -1,26 +1,47 @@
-import { useState, useMemo } from 'react';
-import { Container, Row, Col, Button, Form, InputGroup, ButtonGroup, Badge } from 'react-bootstrap';
-import { FaPlus, FaSearch, FaFilter } from 'react-icons/fa';
+import { useState, useMemo, useEffect } from 'react';
+import { Container, Row, Col, Button, Form, InputGroup } from 'react-bootstrap';
+import { useSearchParams } from 'react-router-dom';
+import { FaPlus, FaSearch, FaTimes } from 'react-icons/fa';
 import { useTasks } from '../../context/TaskContext';
+import { useSources } from '../../context/SourceContext';
 import TaskCard from './TaskCard';
 import TaskForm from './TaskForm';
 
 export default function TaskList() {
   const { tasks, addTask, editTask, deleteTask, toggleComplete } = useTasks();
+  const { sources } = useSources();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlSource = searchParams.get('source') || 'all';
+
   const [showForm, setShowForm] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [search, setSearch] = useState('');
-  const [filterSource, setFilterSource] = useState('all');
+  const [filterSource, setFilterSource] = useState(urlSource);
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('deadline');
+
+  // sync filterSource with URL when sidebar navigation changes ?source=
+  useEffect(() => {
+    setFilterSource(urlSource);
+  }, [urlSource]);
+
+  const updateSourceFilter = (value) => {
+    setFilterSource(value);
+    if (value === 'all') {
+      searchParams.delete('source');
+    } else {
+      searchParams.set('source', value);
+    }
+    setSearchParams(searchParams, { replace: true });
+  };
 
   const filtered = useMemo(() => {
     let result = [...tasks];
 
     if (search) {
       const q = search.toLowerCase();
-      result = result.filter((t) => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
+      result = result.filter((t) => t.title.toLowerCase().includes(q) || (t.description || '').toLowerCase().includes(q));
     }
     if (filterSource !== 'all') result = result.filter((t) => t.source === filterSource);
     if (filterPriority !== 'all') result = result.filter((t) => t.priority === filterPriority);
@@ -61,6 +82,20 @@ export default function TaskList() {
           <h4 className="fw-bold mb-1">Task Manager</h4>
           <p className="text-muted mb-0">
             {filtered.length} task{filtered.length !== 1 ? 's' : ''} shown
+            {filterSource !== 'all' && (
+              <>
+                {' '}in <span className="fw-bold text-capitalize">{filterSource}</span>
+                <Button
+                  size="sm"
+                  variant="link"
+                  className="p-0 ms-2 text-muted"
+                  onClick={() => updateSourceFilter('all')}
+                  title="Clear source filter"
+                >
+                  <FaTimes />
+                </Button>
+              </>
+            )}
           </p>
         </div>
         <Button variant="primary" onClick={() => { setEditingTask(null); setShowForm(true); }}>
@@ -76,11 +111,11 @@ export default function TaskList() {
           </InputGroup>
         </Col>
         <Col md={2}>
-          <Form.Select value={filterSource} onChange={(e) => setFilterSource(e.target.value)}>
+          <Form.Select value={filterSource} onChange={(e) => updateSourceFilter(e.target.value)}>
             <option value="all">All Sources</option>
-            <option value="college">College</option>
-            <option value="internship">Internship</option>
-            <option value="personal">Personal</option>
+            {sources.map((s) => (
+              <option key={s.id} value={s.name} className="text-capitalize">{s.name}</option>
+            ))}
           </Form.Select>
         </Col>
         <Col md={2}>

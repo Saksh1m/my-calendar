@@ -1,15 +1,17 @@
 import { Modal, Badge, Button } from 'react-bootstrap';
-import { FaClock, FaTag, FaExclamationTriangle, FaLink } from 'react-icons/fa';
+import { FaClock, FaLink } from 'react-icons/fa';
 import { format } from 'date-fns';
-import { getUrgencyLevel, getUrgencyBadge, getSourceBadge, getPriorityBadge } from '../../utils/helpers';
+import { getUrgencyLevel, getUrgencyBadge, getPriorityBadge } from '../../utils/helpers';
 import { useTasks } from '../../context/TaskContext';
+import { useSources } from '../../context/SourceContext';
 
 export default function TaskQuickView({ task, onClose }) {
   const { toggleComplete } = useTasks();
+  const { getSourceColor } = useSources();
   const urgency = getUrgencyLevel(task.deadline, task.completed);
   const uBadge = getUrgencyBadge(urgency);
-  const sBadge = getSourceBadge(task.source);
   const pBadge = getPriorityBadge(task.priority);
+  const sourceColor = getSourceColor(task.source);
 
   return (
     <Modal show onHide={onClose} centered>
@@ -18,7 +20,7 @@ export default function TaskQuickView({ task, onClose }) {
       </Modal.Header>
       <Modal.Body>
         <div className="d-flex gap-2 mb-3">
-          <Badge bg={sBadge.bg}>{sBadge.label}</Badge>
+          <Badge style={{ backgroundColor: sourceColor }} className="text-capitalize">{task.source}</Badge>
           <Badge bg={pBadge.bg}>{pBadge.label} Priority</Badge>
           <Badge bg={uBadge.bg}>{uBadge.label}</Badge>
         </div>

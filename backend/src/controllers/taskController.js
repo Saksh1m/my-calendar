@@ -26,9 +26,11 @@ export const createTask = asyncHandler(async (req, res) => {
 });
 
 export const updateTask = asyncHandler(async (req, res) => {
+  const update = { ...req.body };
+  if (update.deadline) update.reminderSent = false;
   const task = await Task.findOneAndUpdate(
     { _id: req.params.id, user: req.user._id },
-    req.body,
+    update,
     { new: true, runValidators: true }
   );
   if (!task) {

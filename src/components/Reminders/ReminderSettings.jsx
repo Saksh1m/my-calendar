@@ -1,16 +1,37 @@
-import { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, ListGroup, Badge, Alert } from 'react-bootstrap';
-import { FaBell, FaEnvelope, FaDesktop, FaClock, FaTrash, FaPlus } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { Container, Row, Col, Card, Form, Button, ListGroup, Badge, Alert, Spinner } from 'react-bootstrap';
+import { FaBell, FaEnvelope, FaDesktop, FaClock } from 'react-icons/fa';
 import { format } from 'date-fns';
 import { useTasks } from '../../context/TaskContext';
+import { api } from '../../api/client';
 import { getUrgencyLevel, getUrgencyBadge } from '../../utils/helpers';
 
 export default function ReminderSettings() {
   const { tasks } = useTasks();
   const [browserEnabled, setBrowserEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(false);
+  const [reminderEmail, setReminderEmail] = useState('');
   const [reminderTime, setReminderTime] = useState('60');
   const [notificationGranted, setNotificationGranted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savedMessage, setSavedMessage] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    api.getPreferences()
+      .then((prefs) => {
+        setEmailEnabled(!!prefs.emailReminders);
+        setReminderEmail(prefs.reminderEmail || '');
+        setReminderTime(String(prefs.reminderLeadMinutes || 60));
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+
+    if ('Notification' in window) {
+      setNotificationGranted(Notification.permission === 'granted');
+    }
+  }, []);
 
   const upcomingTasks = tasks
     .filter((t) => !t.completed && ['critical', 'approaching'].includes(getUrgencyLevel(t.deadline, t.completed)))
@@ -29,9 +50,39 @@ export default function ReminderSettings() {
     }
   };
 
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    setSavedMessage(null);
+    try {
+      if (emailEnabled && !reminderEmail) {
+        throw new Error('Please enter an email address to enable email alerts');
+      }
+      await api.updatePreferences({
+        emailReminders: emailEnabled,
+        reminderEmail,
+        reminderLeadMinutes: Number(reminderTime),
+      });
+      setSavedMessage('Settings saved. Email reminders will be sent automatically.');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Container fluid className="text-center py-5">
+        <Spinner animation="border" />
+      </Container>
+    );
+  }
+
   return (
     <Container fluid>
-      <h4 className="fw-bold mb-1">Reminders & Notifications</h4>
+      <h4 className="fw-bold mb-1">Reminders &amp; Notifications</h4>
       <p className="text-muted mb-3">Configure how you want to be reminded about upcoming deadlines</p>
 
       {overdueTasks.length > 0 && (
@@ -44,12 +95,23 @@ export default function ReminderSettings() {
         </Alert>
       )}
 
+      {savedMessage && (
+        <Alert variant="success" onClose={() => setSavedMessage(null)} dismissible>
+          {savedMessage}
+        </Alert>
+      )}
+      {error && (
+        <Alert variant="danger" onClose={() => setError(null)} dismissible>
+          {error}
+        </Alert>
+      )}
+
       <Row className="g-3">
         <Col md={5}>
           <Card className="shadow-sm mb-3">
             <Card.Header className="bg-white fw-bold">Notification Settings</Card.Header>
             <Card.Body>
-              <Form>
+              <Form onSubmit={handleSave}>
                 <Form.Group className="mb-3 d-flex justify-content-between align-items-center">
                   <div className="d-flex align-items-center gap-2">
                     <FaDesktop className="text-primary" />
@@ -67,7 +129,7 @@ export default function ReminderSettings() {
                 </Form.Group>
 
                 {browserEnabled && !notificationGranted && (
-                  <Button variant="outline-primary" size="sm" className="mb-3" onClick={requestPermission}>
+                  <Button variant="outline-primary" size="sm" className="mb-3" onClick={requestPermission} type="button">
                     Enable Browser Permissions
                   </Button>
                 )}
@@ -91,7 +153,13 @@ export default function ReminderSettings() {
                 {emailEnabled && (
                   <Form.Group className="mb-3">
                     <Form.Label className="small">Email Address</Form.Label>
-                    <Form.Control type="email" placeholder="your@email.com" size="sm" />
+                    <Form.Control
+                      type="email"
+                      value={reminderEmail}
+                      onChange={(e) => setReminderEmail(e.target.value)}
+                      required
+                      size="sm"
+                    />
                   </Form.Group>
                 )}
 
@@ -99,7 +167,7 @@ export default function ReminderSettings() {
 
                 <Form.Group className="mb-3">
                   <Form.Label className="d-flex align-items-center gap-2">
-                    <FaClock /> Default Reminder Time
+                    <FaClock /> Send reminder before deadline
                   </Form.Label>
                   <Form.Select value={reminderTime} onChange={(e) => setReminderTime(e.target.value)}>
                     <option value="15">15 minutes before</option>
@@ -111,7 +179,9 @@ export default function ReminderSettings() {
                   </Form.Select>
                 </Form.Group>
 
-                <Button variant="primary" className="w-100">Save Settings</Button>
+                <Button variant="primary" type="submit" className="w-100" disabled={saving}>
+                  {saving ? 'Saving...' : 'Save Settings'}
+                </Button>
               </Form>
             </Card.Body>
           </Card>

@@ -4,7 +4,8 @@ import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, addHours } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
 import { useTasks } from '../../context/TaskContext';
-import { getUrgencyLevel, getUrgencyBadge, getSourceBadge } from '../../utils/helpers';
+import { useSources } from '../../context/SourceContext';
+import { getUrgencyLevel, getUrgencyBadge } from '../../utils/helpers';
 import TaskQuickView from './TaskQuickView';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
@@ -13,6 +14,7 @@ const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales
 
 export default function CalendarDashboard() {
   const { tasks } = useTasks();
+  const { getSourceColor } = useSources();
   const [view, setView] = useState('month');
   const [date, setDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState(null);
@@ -130,7 +132,6 @@ export default function CalendarDashboard() {
                   .map((t) => {
                     const urgency = getUrgencyLevel(t.deadline, t.completed);
                     const uBadge = getUrgencyBadge(urgency);
-                    const sBadge = getSourceBadge(t.source);
                     return (
                       <div key={t.id} className="list-group-item d-flex justify-content-between align-items-center">
                         <div>
@@ -139,7 +140,7 @@ export default function CalendarDashboard() {
                           <small className="text-muted">{format(new Date(t.deadline), 'MMM dd, yyyy hh:mm a')}</small>
                         </div>
                         <div className="d-flex gap-1">
-                          <Badge bg={sBadge.bg}>{sBadge.label}</Badge>
+                          <Badge style={{ backgroundColor: getSourceColor(t.source) }} className="text-capitalize">{t.source}</Badge>
                           <Badge bg={uBadge.bg}>{uBadge.label}</Badge>
                         </div>
                       </div>
